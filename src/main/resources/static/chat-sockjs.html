@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>SockJS Chatting Test</title>
+<link rel="stylesheet" href="/webjars/bootstrap/css/bootstrap.min.css">
+</head>
+<body>
+
+	<div class="container">
+		<h1>SockJS Chatting Client</h1>
+		<button id="connect">Connect</button>
+		<button id="disconnect" disabled="disabled">Disconnect</button>
+		<hr>
+		<div id="chatLog" class="shadow p-3 mb-4 mt-3 bg-light rounded"></div>
+		<input id="text" type="text" />
+		<button id="send" disabled="disabled">Send</button>
+	</div>
+
+<script src="/webjars/jquery/jquery.min.js"></script>
+<script src="/webjars/popper.js/popper.min.js"></script>
+<script src="/webjars/bootstrap/js/bootstrap.min.js"></script>
+<script src="/webjars/sockjs-client/sockjs.min.js"></script>
+<script>
+	var socket = null;
+
+	function setConnected(connected) {
+		$("#connect").prop("disabled", connected);
+		$("#disconnect").prop("disabled", !connected);
+		$("#send").prop("disabled", !connected);
+	}
+
+	$('#connect').click(function() {
+		try {
+			var host = "http://localhost:8080/chat-sockjs";
+			socket = new SockJS(host);
+
+			socket.onopen = function() {
+				message('success', 'Socket Open');
+			};
+			socket.onmessage = function(msg) {
+				message('dark', 'Received : ' + msg.data);
+			};
+			socket.onclose = function() {
+				message('warning', 'Socket Closed');
+			};
+			setConnected(true);
+		} catch (exception) {
+			message('danger', 'Error : ' + exception);
+		}
+	});
+
+	function send() {
+		var text = $('#text').val();
+
+		try {
+			socket.send(text);
+			message('info', 'Sent : ' + text)
+		} catch (exception) {
+			message('danger', 'Error : ' + exception);
+		}
+		$('#text').val("");
+	}
+
+	function message(color, msg) {
+		$('#chatLog').append(
+				'<p class="text-' + color + '">' + msg + '</p>');
+	}
+
+	$('#text').keypress(function(event) {
+		if (event.keyCode == '13') {
+			send();
+		}
+	});
+
+	$('#send').click(function() {
+		send();
+	});
+
+	$('#disconnect').click(function() {
+		socket.close();
+		setConnected(false);
+	});
+</script>
+
+</body>
+</html>
